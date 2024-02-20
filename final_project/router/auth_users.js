@@ -58,19 +58,24 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
     const username = req.session.authorization.username;
    
     //function declaration to find review of user
-    const findReviewsByUser = (user, isbn) => {
+    const EditReviewsByUser = (user, isbn) => {
         const book = books[isbn];
-        
+        //validate book
+        if (!book) {
+            return res.status(404).json({ message: "Book not found." });
+        }
         // check if book exists and if it has any reviews
         if (book && Object.keys(book.reviews).length > 0) {
-            // check if user has made a review for book
+            // check if user has an existing review for book and modify
             if (book.reviews.hasOwnProperty(user)) {
-                return book.reviews[user].review;
-            } else {
-                return "User has not made a review for " + book.title;
-            }
+                book.reviews[user] = {review: reviewText};
+                books[isbn] = book;
+                return res.status(200).json({message: user +" - review has been modified."})
+            } 
         } else {
-            return "Book has no reviews or doesn't exist ";
+            book.reviews[user] = {review: reviewText};
+            books[isbn] = book;
+            return res.status(200).json({message: user +" - review has been created."});
         }
     }
     
@@ -83,7 +88,7 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
         return res.status(404).json({ message: "Review not found." });
     }
     //find a review made by the user
-    res.send(findReviewsByUser(username, isbn));
+    EditReviewsByUser(username, isbn);
 });
 
 module.exports.authenticated = regd_users;
